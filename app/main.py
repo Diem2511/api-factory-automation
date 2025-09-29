@@ -1,26 +1,19 @@
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
-from loguru import logger
-from sqlalchemy import text
-from tenacity import retry, wait_fixed, stop_after_delay
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from .database import get_db
+from .models.api_opportunity import ApiOpportunity
+import os
 
-from .db import Base, engine
-from .routers import health, discovery, wrappers
+app = FastAPI(title="API Factory Automation", version="1.0.0")
 
-@retry(wait=wait_fixed(2), stop=stop_after_delay(40))
-def init_db():
-    with engine.begin() as conn:
-        conn.execute(text("SELECT 1"))
-    Base.metadata.create_all(bind=engine)
-    logger.info("DB ready and tables created.")
+@app.get("/")
+async def root():
+    return {"message": "API Factory Automation System Running"}
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    logger.info("Initializing DB...")
-    init_db()
-    yield
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "api-factory"}
 
-app = FastAPI(title="API Factory Automation", lifespan=lifespan)
-app.include_router(health.router)
-app.include_router(discovery.router)
-app.include_router(wrappers.router)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
