@@ -1,2 +1,6 @@
+[build]
+builder = "nixpacks"
+
 [deploy]
+# Este es el comando correcto. Deja que Python maneje el puerto.
 startCommand = "python main.py"
