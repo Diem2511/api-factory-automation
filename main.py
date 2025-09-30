@@ -26,3 +26,4 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
     logger.info(f"🚀 Starting SAFE MODE server on http://0.0.0.0:{port}")
     uvicorn.run("main:app", host="0.0.0.0", port=port)
+# Updated at mar 30 sep 2025 10:49:10 -03
