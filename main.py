@@ -4,7 +4,7 @@ import os
 import uvicorn
 
 from app.models import create_tables, get_db, APIEndpoint, APIService
-from app.routes import discovery
+from app.routes import discovery, wrappers
 
 app = FastAPI(
     title="API Factory Automation",
@@ -14,6 +14,7 @@ app = FastAPI(
 
 # Incluir routers
 app.include_router(discovery.router)
+app.include_router(wrappers.router)
 
 # Evento de startup - crear tablas
 @app.on_event("startup")
