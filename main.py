@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 import os
 import uvicorn
@@ -30,10 +30,13 @@ async def startup_event():
     except Exception as e:
         print(f"⚠️ Error al crear tablas: {e}")
 
-# Servir el HTML directamente en la raíz
-@app.get("/", response_class=FileResponse)
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return FileResponse('static/index.html')
+    try:
+        with open('static/index.html', 'r', encoding='utf-8') as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Error: index.html not found</h1>", status_code=500)
 
 @app.get("/health")
 async def health_check():
@@ -60,5 +63,3 @@ async def list_services(db: Session = Depends(get_db)):
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
-
