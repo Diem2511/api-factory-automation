@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 import os
 import uvicorn
@@ -30,20 +30,21 @@ async def startup_event():
     except Exception as e:
         print(f"⚠️ Error al crear tablas: {e}")
 
-@app.get("/")
+# Servir el HTML directamente en la raíz
+@app.get("/", response_class=FileResponse)
 async def root():
-    return RedirectResponse(url="/dashboard/")
+    return FileResponse('static/index.html')
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "api-factory-automation"}
 
-@app.get("/endpoints")
+@app.get("/api/endpoints")
 async def list_endpoints(db: Session = Depends(get_db)):
     endpoints = db.query(APIEndpoint).filter(APIEndpoint.is_active == True).all()
     return {"endpoints": [{"id": e.id, "name": e.name, "url": e.url, "method": e.method} for e in endpoints]}
 
-@app.post("/endpoints")
+@app.post("/api/endpoints")
 async def create_endpoint(name: str, url: str, method: str = "GET", description: str = "", db: Session = Depends(get_db)):
     endpoint = APIEndpoint(name=name, url=url, method=method, description=description)
     db.add(endpoint)
@@ -51,7 +52,7 @@ async def create_endpoint(name: str, url: str, method: str = "GET", description:
     db.refresh(endpoint)
     return {"message": "Endpoint creado exitosamente", "endpoint": {"id": endpoint.id, "name": endpoint.name}}
 
-@app.get("/services")
+@app.get("/api/services")
 async def list_services(db: Session = Depends(get_db)):
     services = db.query(APIService).filter(APIService.is_active == True).all()
     return {"services": [{"id": s.id, "name": s.name} for s in services]}
