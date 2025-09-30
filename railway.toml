@@ -1,13 +1,2 @@
-[build]
-builder = "nixpacks"
-
 [deploy]
-startCommand = "python main.py"
-
-[service]
-[[service.ports]]
-port = 8080
-http = "/"
-
-[variables]
-PORT = "8080"
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
