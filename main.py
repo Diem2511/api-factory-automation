@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Depends
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 import os
 import uvicorn
-
 from app.models import create_tables, get_db, APIEndpoint, APIService
 from app.routes import discovery, wrappers, deployment, dashboard
 
@@ -22,13 +22,6 @@ app.include_router(wrappers.router)
 app.include_router(deployment.router)
 app.include_router(dashboard.router)
 
-# Redirigir root al dashboard
-@app.get("/")
-async def root():
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/dashboard/")
-
-# Evento de startup - crear tablas
 @app.on_event("startup")
 async def startup_event():
     try:
@@ -37,40 +30,31 @@ async def startup_event():
     except Exception as e:
         print(f"⚠️ Error al crear tablas: {e}")
 
-# Endpoints básicos
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/dashboard/")
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "api-factory-automation"}
 
-# Endpoints de gestión de APIs
 @app.get("/endpoints")
 async def list_endpoints(db: Session = Depends(get_db)):
     endpoints = db.query(APIEndpoint).filter(APIEndpoint.is_active == True).all()
-    return {"endpoints": endpoints}
+    return {"endpoints": [{"id": e.id, "name": e.name, "url": e.url, "method": e.method} for e in endpoints]}
 
 @app.post("/endpoints")
-async def create_endpoint(
-    name: str, 
-    url: str, 
-    method: str = "GET",
-    description: str = "",
-    db: Session = Depends(get_db)
-):
-    endpoint = APIEndpoint(
-        name=name,
-        url=url, 
-        method=method,
-        description=description
-    )
+async def create_endpoint(name: str, url: str, method: str = "GET", description: str = "", db: Session = Depends(get_db)):
+    endpoint = APIEndpoint(name=name, url=url, method=method, description=description)
     db.add(endpoint)
     db.commit()
     db.refresh(endpoint)
-    return {"message": "Endpoint creado exitosamente", "endpoint": endpoint}
+    return {"message": "Endpoint creado exitosamente", "endpoint": {"id": endpoint.id, "name": endpoint.name}}
 
 @app.get("/services")
 async def list_services(db: Session = Depends(get_db)):
     services = db.query(APIService).filter(APIService.is_active == True).all()
-    return {"services": services}
+    return {"services": [{"id": s.id, "name": s.name} for s in services]}
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
