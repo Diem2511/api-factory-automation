@@ -1,13 +1,13 @@
 [build]
-builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+builder = "nixpacks"
 
 [deploy]
-startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
-restartPolicyType = "ON_FAILURE"
+startCommand = "python main.py"
 
-# Configurar el servicio como público
 [service]
 [[service.ports]]
 port = 8000
 http = "/"
+
+[environments.production.variables]
+PORT = "8000"

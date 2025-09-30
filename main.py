@@ -3,7 +3,12 @@ from sqlalchemy.orm import Session
 import os
 import uvicorn
 
-from app.models import create_tables, get_db, APIEndpoint
+# Importar después de asegurar dependencias
+try:
+    from app.models import create_tables, get_db, APIEndpoint
+    from app.config import settings
+except ImportError as e:
+    print(f"Import error: {e}")
 
 app = FastAPI(
     title="API Factory Automation",
@@ -11,13 +16,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Crear tablas al iniciar
-@app.on_event("startup")
-async def startup_event():
-    create_tables()
-    print("✅ Tablas de base de datos creadas/verificadas")
-
-# Endpoints básicos
+# Endpoints básicos - SIN base de datos por ahora
 @app.get("/")
 async def root():
     return {"message": "API Factory Automation System - Deployed on Railway!"}
@@ -26,11 +25,12 @@ async def root():
 async def health_check():
     return {"status": "healthy", "environment": "production"}
 
-@app.get("/endpoints")
-async def list_endpoints(db: Session = Depends(get_db)):
-    endpoints = db.query(APIEndpoint).filter(APIEndpoint.is_active == True).all()
-    return {"endpoints": endpoints}
+# Endpoint simple sin base de datos
+@app.get("/test")
+async def test():
+    return {"test": "ok", "port": os.getenv("PORT", "8000")}
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
+    print(f"🚀 Starting server on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
