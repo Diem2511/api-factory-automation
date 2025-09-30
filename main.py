@@ -8,22 +8,21 @@ app = FastAPI(
     version="1.0.1"
 )
 
-# Intenta importar los modelos, pero no detengas la app si falla
 try:
     from app.models import create_tables
-    
+
     @app.on_event("startup")
     async def startup_event():
         print("✅ Application startup: creating database tables.")
         create_tables()
-        
+
     @app.get("/db-status")
     async def db_status():
         return {"database": "connected", "status": "tables_initialized"}
-        
+
 except ImportError as e:
     print(f"⚠️  Database models could not be imported: {e}")
-    
+
     @app.get("/db-status")
     async def db_status_failed():
         return {"database": "not_available", "reason": str(e)}
@@ -40,7 +39,7 @@ async def health_check():
     }
 
 if __name__ == "__main__":
-    # Usa el puerto 8080, que es el que Railway asigna por defecto
     port = int(os.getenv("PORT", 8080))
     print(f"🚀 Starting server on http://0.0.0.0:{port}")
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    # Se quita reload=True para producción
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
