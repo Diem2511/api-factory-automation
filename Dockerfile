@@ -1,13 +1,22 @@
-FROM python:3.12-slim
-
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+FROM python:3.11-slim
 
 WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar requirements e instalar dependencias Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copiar código de la aplicación
 COPY . .
 
-# Railway inyecta $PORT
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Exponer puerto (Railway usa variable $PORT)
+EXPOSE $PORT
+
+# Comando para ejecutar la aplicación
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT
