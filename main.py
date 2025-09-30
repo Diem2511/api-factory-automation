@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 import os
 import uvicorn
@@ -12,11 +13,20 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Montar archivos estáticos
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Incluir routers
 app.include_router(discovery.router)
 app.include_router(wrappers.router)
 app.include_router(deployment.router)
 app.include_router(dashboard.router)
+
+# Redirigir root al dashboard
+@app.get("/")
+async def root():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/dashboard/")
 
 # Evento de startup - crear tablas
 @app.on_event("startup")
@@ -28,10 +38,6 @@ async def startup_event():
         print(f"⚠️ Error al crear tablas: {e}")
 
 # Endpoints básicos
-@app.get("/")
-async def root():
-    return {"message": "✅ API Factory Automation está en línea y funcionando!"}
-
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "api-factory-automation"}
