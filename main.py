@@ -1,15 +1,19 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 import os
 import uvicorn
 
 from app.models import create_tables, get_db, APIEndpoint, APIService
+from app.routes import discovery
 
 app = FastAPI(
     title="API Factory Automation",
     description="Sistema automatizado para descubrir, envolver y desplegar APIs", 
     version="1.0.0"
 )
+
+# Incluir routers
+app.include_router(discovery.router)
 
 # Evento de startup - crear tablas
 @app.on_event("startup")
@@ -58,31 +62,6 @@ async def create_endpoint(
 async def list_services(db: Session = Depends(get_db)):
     services = db.query(APIService).filter(APIService.is_active == True).all()
     return {"services": services}
-
-# Endpoint de prueba de base de datos
-@app.get("/db-test")
-async def db_test(db: Session = Depends(get_db)):
-    try:
-        # Crear un endpoint de prueba
-        test_endpoint = APIEndpoint(
-            name="test_endpoint",
-            url="/api/test",
-            method="GET",
-            description="Endpoint de prueba"
-        )
-        db.add(test_endpoint)
-        db.commit()
-        
-        # Contar endpoints
-        count = db.query(APIEndpoint).count()
-        
-        return {
-            "database": "connected", 
-            "endpoints_count": count,
-            "test_endpoint_created": True
-        }
-    except Exception as e:
-        return {"database": "error", "error": str(e)}
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
