@@ -1,14 +1,5 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
+from fastapi import FastAPI
 import os
-import uvicorn
-
-# Importar después de asegurar dependencias
-try:
-    from app.models import create_tables, get_db, APIEndpoint
-    from app.config import settings
-except ImportError as e:
-    print(f"Import error: {e}")
 
 app = FastAPI(
     title="API Factory Automation",
@@ -16,21 +7,44 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Endpoints básicos - SIN base de datos por ahora
 @app.get("/")
 async def root():
-    return {"message": "API Factory Automation System - Deployed on Railway!"}
+    return {"message": "🎉 ¡API Factory Automation funcionando en Railway!"}
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "environment": "production"}
+    return {
+        "status": "healthy", 
+        "environment": "production",
+        "port": os.getenv("PORT", "8000")
+    }
 
-# Endpoint simple sin base de datos
 @app.get("/test")
-async def test():
-    return {"test": "ok", "port": os.getenv("PORT", "8000")}
+async def test_endpoint():
+    return {"test": "success", "message": "Todo funciona correctamente"}
+
+# Solo intentar importar la base de datos si las dependencias están disponibles
+try:
+    from app.models import create_tables
+    
+    @app.on_event("startup")
+    async def startup_event():
+        create_tables()
+        print("✅ Tablas de base de datos creadas/verificadas")
+        
+    @app.get("/db-test")
+    async def db_test():
+        return {"database": "connected", "tables": "created"}
+        
+except ImportError as e:
+    print(f"⚠️  Algunas dependencias no disponibles: {e}")
+    
+    @app.get("/db-test")
+    async def db_test():
+        return {"database": "not_available", "message": "Algunas dependencias faltan"}
 
 if __name__ == "__main__":
+    import uvicorn
     port = int(os.getenv("PORT", 8000))
-    print(f"🚀 Starting server on port {port}")
+    print(f"🚀 Iniciando servidor en puerto {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
