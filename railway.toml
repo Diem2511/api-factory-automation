@@ -6,7 +6,7 @@ startCommand = "python main.py"
 
 [service]
 [[service.ports]]
-port = 8080  # ¡Cambiar a 8080!
+port = 8080
 http = "/"
 
 [variables]
